@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📋 Planr - AI Task Manager</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar for Conversations -->
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <h3><i class="fas fa-history"></i> Conversations</h3>
+                <button class="menu-toggle" onclick="toggleSidebar()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="sidebar-content">
+                <button class="new-chat-btn" onclick="startNewConversation()">
+                    <i class="fas fa-plus"></i> New Chat
+                </button>
+                <div class="conversations-list" id="conversationsList">
+                    <p class="empty-state">No conversations yet</p>
+                </div>
+            </div>
+            <div class="sidebar-footer">
+                <button class="clear-btn" onclick="clearAllConversations()" title="Delete all conversations">
+                    <i class="fas fa-trash"></i> Clear All
+                </button>
+            </div>
+        </div>
+
+        <!-- Mobile Menu Toggle -->
+        <button class="mobile-menu-toggle" onclick="toggleSidebar()">
+            <i class="fas fa-bars"></i>
+        </button>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Header -->
+            <div class="header">
+                <div class="header-content">
+                    <div class="logo">
+                        <i class="fas fa-clipboard-list"></i>
+                        <h1>Planr</h1>
+                    </div>
+                    <div style="display: flex; gap: 10px;">
+                        <button class="theme-toggle-btn" id="themeToggleBtn" onclick="toggleTheme()" title="Toggle dark mode">
+                            <span id="themeIcon">🌙</span>
+                            <span>Dark</span>
+                        </button>
+                        <button class="help-btn" onclick="toggleHelp()">
+                            <i class="fas fa-question-circle"></i> Help
+                        </button>
+                    </div>
+                </div>
+                <p class="subtitle">Your AI-powered daily task manager</p>
+            </div>
+
+            <!-- Chat Container -->
+            <div class="chat-container">
+                <!-- Search Bar -->
+                <div class="search-container">
+                    <input 
+                        type="text" 
+                        id="searchInput" 
+                        class="search-input" 
+                        placeholder="🔍 Search tasks, notes, goals... (Ctrl+S)"
+                        onkeyup="performSearch(this.value)"
+                    >
+                    <div id="searchResults" class="search-results" style="display: none;"></div>
+                </div>
+
+                <div class="messages" id="messages">
+                    <div class="message bot-message">
+                        <div class="message-content">
+                            <p>👋 Hey there! Welcome to your Personal Assistant!</p>
+                            <p>I can help you with:</p>
+                            <ul>
+                                <li>✅ Tasks & To-Do lists</li>
+                                <li>🔔 Reminders</li>
+                                <li>📅 Calendar & Events</li>
+                                <li>📝 Notes</li>
+                                <li>⏱️ Time Tracking</li>
+                                <li>🧮 Calculator</li>
+                                <li>📖 Dictionary</li>
+                                <li>📔 Journal</li>
+                            </ul>
+                            <p>Type <strong>'help'</strong> for full command list or just start chatting! 😊</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Input Area -->
+                <div class="input-area">
+                    <button class="quick-event-btn" onclick="openEventModal()" title="Add event using calendar">
+                        <i class="fas fa-calendar-plus"></i> Add Event
+                    </button>
+                    <button class="voice-btn" id="voiceBtn" onclick="toggleVoiceInput()" title="Speak your message">
+                        <i class="fas fa-microphone"></i>
+                    </button>
+                    <input 
+                        type="text" 
+                        id="messageInput" 
+                        class="message-input" 
+                        placeholder="Type your message... or try 'hi', 'add task...', 'calculate...'" 
+                        autocomplete="off"
+                    >
+                    <button class="send-btn" onclick="sendMessage()">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                    <button class="goals-btn" onclick="openGoalsPanel()" title="Manage your goals">
+                        <i class="fas fa-target"></i>
+                    </button>
+                    <button class="notes-btn" onclick="openNotesModal()" title="Create a note (Ctrl+N)">
+                        <i class="fas fa-sticky-note"></i>
+                    </button>
+                </div>
+                
+                <!-- Voice Status Indicator -->
+                <div id="voiceStatus" class="voice-status" style="display: none;">
+                    <span id="voiceStatusText">🎤 Listening...</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notifications Container -->
+    <div id="notificationsContainer" class="notifications-container"></div>
+
+    <!-- Goals Management Modal -->
+    <div id="goalsModal" class="modal">
+        <div class="modal-content goals-modal">
+            <div class="modal-header">
+                <h2>🎯 Goals & Targets</h2>
+                <button class="close-btn" onclick="closeGoalsPanel()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="goals-container">
+                    <!-- Create New Goal Section -->
+                    <div class="create-goal-section">
+                        <h3>Create New Goal</h3>
+                        <div class="goal-form">
+                            <input type="text" id="goalName" placeholder="Goal name (e.g., 'Read 10 books')" class="form-input">
+                            <input type="number" id="goalTarget" placeholder="Target value" min="1" class="form-input">
+                            <input type="date" id="goalDeadline" class="form-input">
+                            <button class="btn-submit" onclick="createGoal()">Create Goal</button>
+                        </div>
+                    </div>
+
+                    <!-- Goals List Section -->
+                    <div class="goals-list-section">
+                        <h3>Your Goals</h3>
+                        <div id="goalsList" class="goals-list">
+                            <p class="empty-state">No goals yet. Create one to get started! 🎯</p>
+                        </div>
+                    </div>
+
+                    <!-- Goals Summary Section -->
+                    <div class="goals-summary-section">
+                        <h3>Summary</h3>
+                        <div id="goalsSummary" class="goals-summary">
+                            <p>No data available</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notes Modal with Drag-and-Drop -->
+    <div id="notesModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>📝 Create Note</h2>
+                <button class="close-btn" onclick="closeNotesModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="note-form">
+                    <input 
+                        type="text" 
+                        id="noteTitle" 
+                        placeholder="Note title..." 
+                        class="form-input"
+                    >
+                    <textarea 
+                        id="noteContent" 
+                        placeholder="Write your note... (Ctrl+N to create new note)" 
+                        class="form-input"
+                        rows="8"
+                    ></textarea>
+
+                    <!-- Drag and Drop Zone -->
+                    <div id="dragDropZone" class="drag-drop-zone" ondrop="handleFileDrop(event)" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)">
+                        <div class="drag-drop-icon">📎</div>
+                        <div class="drag-drop-text">Drag files here to attach</div>
+                        <div class="drag-drop-hint">or click to select (images, PDFs, documents)</div>
+                        <input type="file" id="noteFileInput" multiple onchange="handleFileSelect(event)">
+                    </div>
+
+                    <!-- Attached Files List -->
+                    <div id="attachedFiles" class="attached-files"></div>
+
+                    <div style="display: flex; gap: 8px; margin-top: 12px;">
+                        <button class="btn-cancel" onclick="closeNotesModal()">Cancel</button>
+                        <button class="btn-submit" onclick="saveNote()">Save Note</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Event Creation Modal with Calendar Picker -->
+    <div id="eventModal" class="modal">
+        <div class="modal-content event-modal">
+            <div class="modal-header">
+                <h2>📅 Add Event</h2>
+                <button class="close-btn" onclick="closeEventModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="event-form">
+                    <div class="form-group">
+                        <label for="eventName">Event Name:</label>
+                        <input type="text" id="eventName" placeholder="Enter event name..." class="form-input">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="eventDate">Select Date:</label>
+                        <div class="date-picker-container">
+                            <div class="calendar-nav">
+                                <button class="nav-btn" onclick="previousMonth()">❮</button>
+                                <h3 id="monthYear" class="month-year"></h3>
+                                <button class="nav-btn" onclick="nextMonth()">❯</button>
+                            </div>
+                            <div class="calendar-grid" id="calendarGrid"></div>
+                            <div class="selected-date-display">
+                                <span>Selected: <strong id="selectedDateDisplay">None</strong></span>
+                            </div>
+                        </div>
+                        <input type="hidden" id="eventDate" value="">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="eventTime">Time (Optional):</label>
+                        <input type="time" id="eventTime" value="12:00" class="form-input">
+                    </div>
+
+                    <div class="form-actions">
+                        <button class="btn-cancel" onclick="closeEventModal()">Cancel</button>
+                        <button class="btn-submit" onclick="submitEvent()">Add Event</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Help Modal -->
+    <div id="helpModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>📖 Help & Commands</h2>
+                <button class="close-btn" onclick="toggleHelp()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <!-- Keyboard Shortcuts Panel -->
+                <div class="shortcuts-panel">
+                    <div class="shortcuts-title">⌨️ Keyboard Shortcuts</div>
+                    <div class="shortcuts-list">
+                        <div class="shortcut-item">
+                            <span class="shortcut-action">Quick Task</span>
+                            <span class="shortcut-key">Ctrl+T</span>
+                        </div>
+                        <div class="shortcut-item">
+                            <span class="shortcut-action">New Note</span>
+                            <span class="shortcut-key">Ctrl+N</span>
+                        </div>
+                        <div class="shortcut-item">
+                            <span class="shortcut-action">Search</span>
+                            <span class="shortcut-key">Ctrl+S</span>
+                        </div>
+                        <div class="shortcut-item">
+                            <span class="shortcut-action">Goals</span>
+                            <span class="shortcut-key">Ctrl+K</span>
+                        </div>
+                        <div class="shortcut-item">
+                            <span class="shortcut-action">Toggle Dark Mode</span>
+                            <span class="shortcut-key">Ctrl+M</span>
+                        </div>
+                        <div class="shortcut-item">
+                            <span class="shortcut-action">Close Modal</span>
+                            <span class="shortcut-key">Esc</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Help Content -->
+                <div id="helpContent">
+                    <p>Loading help...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
